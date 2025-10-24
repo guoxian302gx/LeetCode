@@ -1,0 +1,1647 @@
+
+---------------------
+【奥秘】
+0、 区间分成3部分， = < >  依次看
+    其中一定有2个区间的收窄方式是一样的 [mid, mid-1] 、[mid+1, mid] 这两种方式    
+    left = mid + 1; 和 right = mid; while(left < right) 退出循环以后 left == right 成立，此时 mid 中间数正常下取整就好；
+    left = mid; 和 right = mid - 1; while(left < right) 退出循环以后 left == right 成立，此时为了避免死循环，mid 中间数需要改成上取整。
+1、while(left < right)
+    此时跳出训练时候  left == right的，并且left这个索引值没有做判断，所以要额外判断left的值是否符合预期
+    1）跳出循环， left == right 没有做判断。 两个措施
+        1）判断left==n 是否越界，越界直接不满足
+        【有的题目一定存在idx，有的不一定存在】
+        2）没有越界的情况下，一定是满足条件的数了，直接返回left
+                        ，不一定存在时候，比如要找>=target的第一个数，那么left和target
+        ---------------------
+        3） 只是要额外判断是否=（比如寻找nums中第一个>=target的数，可能没有=的情况），
+        4） 所以要用if，判断是否=，反正当前left 就是>= 的数
+2、 right = n 和  right=n-1的问题
+    搭配奥秘1一起看，如果循环终止是 left < right， 同时right=n， 那么会出现 left = right = n的情况，
+        先判断 left 是否为n， 
+        不为n的时候判断left对应值是否符合预期
+3、 一旦出现 边界缩减为 [mid, mid-1]的组合， 因为mid是向下取整，会循环hang死，两种处理方式
+    1） mid 的时候向上取整；  
+    2） 比如只剩下两个元素，[left, right]  mid 一直是向下取整，就一直是left=left的情况，就hang死了
+    3) 反之 对于 left = mid + 1; right = mid; 这种向下取整就没有问题；
+
+4、 left == right 跳出 是否需要处理： 一定存在的时候就不处理；
+比如找最小数，一定存在最小数。 
+找>=target的位置，可能不存在，这里就需要判断
+
+{旋转数组}
+需要判断nums[mid]  ?? nums[right] 所以right = n-1  ， 不能越界
+
+// 【第一节】704 二分查找， 找到元素返回 idx， 没有找到返回-1
+// https://leetcode.cn/problems/binary-search/description/
+class Solution {
+public:
+    // https://suanfa8.com/binary-search
+    int search(vector<int>& nums, int target) {
+        int left = 0, right = nums.size()-1;
+        while(left < right) {   //  left <= right的时候 也要判断，判断idx=left的位置, 因为mid = (right-left)/2 ，所以其实是向下取整
+            int mid = left + (right-left)/2;
+            if(nums[mid] == target) {
+                return mid;
+            } else if( nums[mid] < target) {
+                left = mid+1;
+            } else {
+                right = mid-1;
+            }
+        }
+        // while left<right，就相当于 退出循环的时候 idx=left=right， 但是这个位置没有判断，所以需要做一次额外判断；
+        if(nums[left] == target) return left;
+        return -1;
+    }
+};
+
+
+class Solution {
+public:
+    int search(vector<int>& nums, int target) {
+        int left = 0, right = nums.size()-1;
+        //  left <= right的时候 也要判断，判断idx=left的位置, 因为mid = (right-left)/2 ，所以其实是向下取整
+        // 如果while里面是 left< right，相当于 left = right位置没判断， while后面要接一个判断
+        while(left <= right) {
+            int mid = (left + right) / 2;
+            if(nums[mid] < target) {
+                left = mid + 1;
+            } else if (nums[mid] > target) {
+                right = mid - 1;
+            } else {
+                return mid;
+            }
+        }
+        // if(nums[left] == target) return left; 
+        return -1;
+    }
+};
+
+
+
+class Solution {
+public:
+    int search(vector<int>& nums, int target) {
+        int left = 0, right = nums.size();
+        while(left < right) {
+            int mid = (left + right) / 2;
+            if (nums[mid] == target) {
+                return mid;
+            } else if (nums[mid] < target) {
+                left = mid + 1;
+            } else {
+                right = mid - 1;
+            }
+        }
+        if(left == nums.size()) return -1;
+        if(nums[left] == target) return left;
+        return -1;
+    }
+};
+
+
+// 【第二节】35 搜索插入位置
+// https://leetcode.cn/problems/search-insert-position/description/?envType=study-plan-v2&envId=top-100-liked
+class Solution {
+public:
+    // https://leetcode.cn/problems/search-insert-position/solutions/10969/te-bie-hao-yong-de-er-fen-cha-fa-fa-mo-ban-python-/?envType=study-plan-v2&envId=top-100-liked
+    //https://suanfa8.com/binary-search
+    int searchInsert(vector<int>& nums, int target) {
+        int left = 0, right = nums.size(); 
+        while(left < right) {
+            int mid = left + (right-left)/2;
+            if(nums[mid] < target) {
+                left = mid + 1;
+            } else {
+                right = mid;
+            }
+        }
+        return left;
+    }
+};
+
+
+
+
+-------------------------------------------------------
+// 【第二节】34  在排序数组中查找元素的第一个和最后一个位置， 不存在则返回[-1, -1]
+// https://leetcode.cn/problems/find-first-and-last-position-of-element-in-sorted-array/description/
+// 本质就是找左边界、右边界
+// 找左边界  就是找第一个>= target 元素的值 , 所以< 的一定不是答案
+// 找右边界， 找第一个> target元素的值； 所以<=的一定不是答案
+class Solution {
+public:
+    vector<int> searchRange(vector<int>& nums, int target) {
+        //先找>=target 的第一个数, 因为区间是0,n 有可能整个数组都<target，所以初始化为n，但是出while的时候left=right，要判断当前是否为n
+        // 再找>target的 第一个数
+        if(nums.empty()) return {-1,-1};
+        vector<int> res;
+        int n = nums.size();
+        int  left =0, right = n;
+        // 找左边界  就是找第一个>= target 元素的值 , 所以< 的一定不是答案
+        while(left<right){
+            int mid = (right-left)/2 + left;
+            if(nums[mid] < target) {
+                left = mid + 1;
+            } else {
+                right = mid;
+            }
+        }
+        if(left>=n) return {-1,-1};
+        if(nums[left] !=target) return {-1,-1}; // 没有找到这个数
+        res.push_back(left);
+
+        left =0; 
+        right = n;
+        // 找右边界， 找第一个> target元素的值； 所以<=的一定不是答案
+        while(left<right){
+            int mid = (right-left)/2 + left;
+            if(nums[mid] <= target) {        // nums[mid] < target & nums[mid] == target的时候 都严格为left=mid+1
+                left = mid+1;
+            } else {
+                right = mid;
+            }
+        }
+        res.push_back(left-1);
+        return res;
+    }
+};
+
+// 【第二节】35 搜索插入位置
+// https://leetcode.cn/problems/search-insert-position/description/
+// 等效于34题， 寻找第一个>=target的值，等于34题找左边界
+class Solution {
+public:
+    // https://leetcode.cn/problems/search-insert-position/solutions/10969/te-bie-hao-yong-de-er-fen-cha-fa-fa-mo-ban-python-/?envType=study-plan-v2&envId=top-100-liked
+    //https://suanfa8.com/binary-search
+    // -----------------
+    // right = nums.size(); 
+    int searchInsert(vector<int>& nums, int target) {
+        int left = 0, right = nums.size(); 
+        // right = n 的时候， left < right 出来的时候 就是  left = right， 极端情况right = n ； 这个不用做判断
+        while(left < right) {
+            int mid = left + (right-left)/2;
+            if(nums[mid] < target) {
+                left = mid + 1;
+            } else {
+                right = mid;
+            }
+        }
+        return left;
+    }
+};
+--------------------      right = nums.size()-1; 
+class Solution {
+public:
+    int searchInsert(vector<int>& nums, int target) {
+        int left = 0, right = nums.size()-1;
+        // >= target的第一个idx
+        // right = n-1 的时候， left < right 出来的时候就是  left = right，极端情况right = n-1 ； 这个要做判断，属于有效元素
+        while(left < right) { // 因为 left< right ,所以Left == right 没有判断
+            int mid = (left+right)/2;
+            if(nums[mid] < target) {
+                left = mid + 1;
+            } else if(nums[mid] == target){
+                return mid;
+            } else {
+                right = mid;
+            }
+        }
+        if(nums[left] < target) return nums.size();
+        return left;
+    }
+};
+
+
+
+// 【第二节】69 x的平方根 ？？ 这个答案较早，可以优化一下
+// 在[0, x] ==> [0, x/2] 之间找答案 
+// https://leetcode.cn/problems/sqrtx/description/
+
+class Solution {
+public:
+    int mySqrt(int x) {
+        if(x == 0) return 0;
+        if(x == 1) return 1;
+        int left = 1;
+        int right = x;
+        while(left < right) {
+            int mid = (right - left +1) / 2 + left;
+            // 边界缩减为mid   mid-1的时候，由于向下取整拿到left，所以会hang死，[left, left+1]  mid会一直是left
+            // 处理方式： 1） mid 的时候向上取整；   
+            if(x / mid == mid) {
+                return mid;
+            } else if(mid  < x/mid){
+                left = mid;
+            } else {
+                right = mid - 1;
+            }
+            
+        }
+        return left;
+    }
+};
+
+// 【第三节】 ～【第十节】过，都是理论
+
+
+----------------【题型1】---------------------
+35. 搜索插入位置
+// https://leetcode.cn/problems/search-insert-position/description/
+
+class Solution {
+public:
+    // https://leetcode.cn/problems/search-insert-position/solutions/10969/te-bie-hao-yong-de-er-fen-cha-fa-fa-mo-ban-python-/?envType=study-plan-v2&envId=top-100-liked
+    //https://suanfa8.com/binary-search
+    // -----------------
+    // right = nums.size(); 
+    int searchInsert(vector<int>& nums, int target) {
+        int left = 0, right = nums.size(); 
+        // right = n 的时候， left < right 出来的时候 就是  left = right， 极端情况right = n ； 这个不用做判断
+        while(left < right) {
+            int mid = left + (right-left)/2;
+            if(nums[mid] < target) {
+                left = mid + 1;
+            } else {
+                right = mid;
+            }
+        }
+        return left;
+    }
+};
+// --------------------      right = nums.size()-1; 
+// class Solution {
+// public:
+//     int searchInsert(vector<int>& nums, int target) {
+//         int left = 0, right = nums.size()-1;
+//         // >= target的第一个idx
+//         // right = n-1 的时候， left < right 出来的时候就是  left = right，极端情况right = n-1 ； 这个要做判断，属于有效元素
+//         while(left < right) { // 因为 left< right ,所以Left == right 没有判断
+//             int mid = (left+right)/2;
+//             if(nums[mid] < target) {
+//                 left = mid + 1;
+//             } else if(nums[mid] == target){
+//                 return mid;
+//             } else {
+//                 right = mid;
+//             }
+//         }
+//         if(nums[left] < target) return nums.size();
+//         return left;
+//     }
+// };
+
+
+74. 搜索二维矩阵
+// https://leetcode.cn/problems/search-a-2d-matrix/description/?envType=study-plan-v2&envId=top-100-liked
+class Solution {
+public:
+    bool searchMatrix(vector<vector<int>>& matrix, int target) {
+        bool res = false;
+        int m = matrix.size();
+        int n = matrix[0].size();
+        int r = 0, c = n-1;
+        while(r < m && c >=0) {
+            if(matrix[r][c] == target) {
+                return true;
+            } else if(matrix[r][c] < target){
+                r++;
+            } else {
+                c--;
+            }
+        }
+        return false;
+    }
+};
+
+
+34. 在排序数组中查找元素的第一个和最后一个位置
+// https://leetcode.cn/problems/find-first-and-last-position-of-element-in-sorted-array/description/?envType=study-plan-v2&envId=top-100-liked
+class Solution {
+public:
+    vector<int> searchRange(vector<int>& nums, int target) {
+        vector<int> res;
+        // zuo bianjie >= target的第一个元素
+        int left = 0, right = nums.size(); 
+        // left = right = n
+        while(left < right) {
+            int mid = (left + right) / 2;
+            if(nums[mid] < target) {
+                left = mid + 1;
+            } else {
+                right = mid;
+            }
+        }
+        if(left == nums.size()) return {-1,-1};
+        if(nums[left] !=target) return {-1,-1}; // 没找到
+        res.push_back(left);
+        // 右边界， > target 的第一个元素 idx - 1
+        left = 0, right = nums.size();
+        while(left < right) {
+            int mid = (left + right) / 2;
+            if(nums[mid] == target) {
+                left = mid + 1;
+            } else if(nums[mid] < target) {
+                left = mid + 1;
+            } else {
+                right = mid;
+            }
+        }
+        res.push_back(left-1);
+        return res;
+    }
+};
+
+
+33. 搜索旋转排序数组
+// 先依据 mid <=re> right  分成3种情况，再每一种情况讨论 left，mid，right的值
+// 1） 分 nums[mid] ^ nums[right] 情况
+// 2) 分 nums[mid] \ target\ nums[right] 或nums[left] target nums[mid] qingkuang ，边界用<= >=
+// 3) left + right + 1的手法， 上下边界问题， 注意: 可以用收缩边界来处理
+// https://leetcode.cn/problems/search-in-rotated-sorted-array/description/?envType=study-plan-v2&envId=top-100-liked
+class Solution {
+public:
+    // https://suanfa8.com/binary-search/solutions-1/0033-search-in-rotated-sorted-array
+    int search(vector<int>& nums, int target) {
+        int left = 0, right = nums.size()-1;
+        // 因为上半段是 left = mid; right = mid-1的更新方式 所以会死循环，需要right-left+1
+        // 下半段又是left = mid+1, right = mid的更新方式， 相互冲突， 所以需要做一个小trick ，让上下两种缩减区间的方式一致
+        // 要么让上半段 为 left = mid +1， 要么让 下半段为 right = mid-1;
+        // while(left < right) {
+        //     int mid = left + (right-left+1) / 2;
+        //     if(nums[mid] < nums[right]){
+        //         // [mid, right] 单调区间 
+        //         if(nums[mid] <= target && target <= nums[right]){
+        //             left = mid;
+        //         } else {
+        //             right = mid-1;
+        //         }
+        //     } else {
+        //         // [left, mid] 单调区间
+        //         // if(nums[left] <= target && target <= nums[mid]) {
+        //         // [left, mid] 单调 [left, mid-1一定也单调]
+        //         if(nums[left] <= target && target <= nums[mid-1]) {
+        //             right = mid-1;
+        //         } else {
+        //             left = mid;
+        //         }
+        //     }
+        // }
+        // fun1(nums, left, right, target);
+        fun2(nums, left, right, target);
+        if(nums[left] == target) return left;
+        return -1;
+    }
+
+    void fun1(vector<int>& nums, int& left , int& right, int target) {
+        while(left < right) {
+            int mid = left + (right-left+1) / 2;
+            if(nums[mid] < nums[right]){
+                // [mid, right] 单调区间 
+                if(nums[mid] <= target && target <= nums[right]){
+                    left = mid;
+                } else {
+                    right = mid-1;
+                }
+            } else {
+                // [left, mid] 单调区间
+                // if(nums[left] <= target && target <= nums[mid]) {
+                // [left, mid] 单调 [left, mid-1一定也单调]
+                if(nums[left] <= target && target <= nums[mid-1]) {
+                    right = mid-1;
+                } else {
+                    left = mid;
+                }
+            }
+        }
+    }
+
+    void fun2(vector<int>& nums, int& left , int& right, int target) {
+        while(left < right) {
+            int mid = left + (right-left) / 2;
+            if(nums[mid] < nums[right]){
+                // [mid, right] 单调区间 
+                // 那么[mid+1,right]也一定单调
+                if(nums[mid+1] <= target && target <= nums[right]){
+                    left = mid+1;
+                } else {
+                    right = mid;
+                }
+            } else {
+                // [left, mid] 单调区间
+                if(nums[left] <= target && target <= nums[mid]) {
+                    right = mid;
+                } else {
+                    left = mid+1;
+                }
+            }
+        }
+    }
+};
+
+
+
+
+81. 搜索旋转排序数组 II
+// https://leetcode.cn/problems/search-in-rotated-sorted-array-ii/description/
+class Solution {
+public:
+    // 类似33题   https://leetcode.cn/problems/search-in-rotated-sorted-array/submissions/509524264/
+    bool search(vector<int>& nums, int target) {
+        int left = 0, right = nums.size()-1;
+        return fun1(nums, left, right, target);
+    }
+    bool fun1(vector<int>& nums, int &left, int &right, int target) {
+        while(left < right) {
+            int mid = left + (right - left+1) / 2 ;
+            if(nums[mid] < nums[right]) {
+                //[mid, right] 严格单调非减
+                if(nums[mid] <= target && target <= nums[right]) {
+                    left = mid;
+                } else {
+                    right = mid - 1;
+                }
+            } else if ( nums[mid] > nums[right] ){
+                //[left, mid] 严格单调非减
+                // if(nums[left] <= target && target <= nums[mid]) {
+                if(nums[left] <= target && target <= nums[mid-1]) {
+                    right = mid-1;
+                } else {
+                    left = mid;
+                }
+            } else {  // mid = right ,右边界自减1
+                if(nums[right] == target) return true;
+                right--;
+            }
+        }
+        if(nums[left] == target) return true;
+        return false;
+    }
+};
+
+
+
+4. 寻找两个正序数组的中位数
+https://leetcode.cn/problems/median-of-two-sorted-arrays/description/
+class Solution {
+public:
+    double findMedianSortedArrays(vector<int>& nums1, vector<int>& nums2) {
+        int m = nums1.size();
+        int n = nums2.size();
+        int len = m + n;
+        if((m+n)%2==0) return (hlp(nums1, nums2, len/2) + hlp(nums1, nums2, len/2 + 1))/2.0;  // 偶数
+        return hlp(nums1, nums2, len/2 + 1); // 奇数
+    }
+
+    // 返回 nums1 + nums2 中 的第k个数
+    int hlp(vector<int>& nums1, vector<int>& nums2, int k) {
+        int m = nums1.size();
+        int n = nums2.size();
+        int idx1 = 0, idx2 = 0;
+        while(true) {
+            if(idx1 == m) return nums2[idx2+k-1];
+            if(idx2 == n) return nums1[idx1+k-1];
+            if(k==1) return min(nums1[idx1], nums2[idx2]);
+
+            int newidx1 = min(idx1 + k/2 -1, m-1); // 一轮过滤 k/2 -1 个数  比如，k=4， 一边过滤1个数， k=6， 一边过滤2个数
+            int newidx2 = min(idx2 + k/2 -1, n-1); // 一轮过滤 k/2 -1 个数
+            int pivot1 = nums1[newidx1];
+            int pivot2 = nums2[newidx2];
+            if(pivot1 < pivot2) {
+                k = k - (newidx1 - idx1 + 1);
+                idx1 = newidx1 + 1;
+            } else {
+                k = k - (newidx2 - idx2 + 1);
+                idx2 = newidx2 + 1;
+            }
+        }
+    }
+};
+
+
+
+【题型1】 -------------------------------------------------------- 
+
+35. 搜索插入位置；
+https://leetcode.cn/problems/search-insert-position/description/
+
+
+class Solution {
+public:
+    // https://leetcode.cn/problems/search-insert-position/solutions/10969/te-bie-hao-yong-de-er-fen-cha-fa-fa-mo-ban-python-/?envType=study-plan-v2&envId=top-100-liked
+    //https://suanfa8.com/binary-search
+    // -----------------
+    // right = nums.size(); 
+    int searchInsert(vector<int>& nums, int target) {
+        int left = 0, right = nums.size(); 
+        // right = n 的时候， left < right 出来的时候 就是  left = right， 极端情况right = n ； 这个不用做判断
+        while(left < right) {
+            int mid = left + (right-left)/2;
+            if(nums[mid] < target) {
+                left = mid + 1;
+            } else {
+                right = mid;
+            }
+        }
+        return left;
+    }
+};
+// --------------------      right = nums.size()-1; 
+// class Solution {
+// public:
+//     int searchInsert(vector<int>& nums, int target) {
+//         int left = 0, right = nums.size()-1;
+//         // >= target的第一个idx
+//         // right = n-1 的时候， left < right 出来的时候就是  left = right，极端情况right = n-1 ； 这个要做判断，属于有效元素
+//         while(left < right) { // 因为 left< right ,所以Left == right 没有判断
+//             int mid = (left+right)/2;
+//             if(nums[mid] < target) {
+//                 left = mid + 1;
+//             } else if(nums[mid] == target){
+//                 return mid;
+//             } else {
+//                 right = mid;
+//             }
+//         }
+//         if(nums[left] < target) return nums.size();
+//         return left;
+//     }
+// };
+
+
+
+34. 在排序数组中查找元素的第一个和最后一个位置。
+// https://leetcode.cn/problems/find-first-and-last-position-of-element-in-sorted-array/description/
+
+class Solution {
+public:
+    vector<int> searchRange(vector<int>& nums, int target) {
+        //>= target
+        vector<int> res;
+        int n = nums.size();
+        int left = 0, right = n;
+        while(left < right) {
+            int mid = left + (right - left) / 2;
+            if(nums[mid] == target) {
+                right = mid;
+            } else if (nums[mid] < target) {
+                left = mid + 1;
+            } else {
+                right = mid;
+            }
+        }
+        if(left == n) return {-1, -1};
+        if(nums[left] != target) return {-1,-1};
+        res.push_back(left);
+
+        // > target 第一个元素
+        left = 0;
+        right = n;
+        while(left < right) {
+            int mid = left + (right - left) / 2;
+            if(nums[mid] == target) {
+                left = mid + 1;
+            } else if (nums[mid] < target) {
+                left = mid + 1;
+            } else {
+                right = mid;
+            }
+        }
+        // if(left == n) return {-1, -1};
+        res.push_back(left - 1);
+        return res;
+    }
+};
+
+
+-----------
+153. 寻找旋转排序数组中的最小值；
+// https://leetcode.cn/problems/find-minimum-in-rotated-sorted-array/description/
+class Solution {
+public:
+    int findMin(vector<int>& nums) {
+        int n = nums.size();
+        int left = 0, right = n-1;
+        while(left < right) {
+            int mid = (right-left)/2 + left;
+            if(nums[mid] < nums[right]) {
+                right = mid;
+            } else {
+                left = mid + 1;
+            }
+        }
+        return nums[left];
+    }
+};
+
+154. 寻找旋转排序数组中的最小值 II；
+// 有相同元素， right--;
+// https://suanfa8.com/binary-search/solutions-1/0154-find-minimum-in-rotated-sorted-array-ii
+class Solution {
+public:
+    int findMin(vector<int>& nums) {
+        int n = nums.size();
+        int left = 0, right = n - 1;
+        while(left < right) {
+            int mid = left + (right - left ) / 2;
+            if(nums[mid] == nums[right]) {
+                right--; // 相等的时候， left 和right 两边都有可能，right--就行，一步一步缩小
+                // 因为是和右侧nums[right]比较， 这个right 一定可以排除， 因为mid == right，所以right--；
+                // 如果是和nums[left] 比较的话，  就left++;
+            } else if (nums[mid] < nums[right]) {
+                right = mid;
+            } else if (nums[mid] > nums[right]) {
+                left = mid + 1;
+            }
+        }
+        return nums[left];
+    }
+};
+
+
+33. 搜索旋转排序数组；
+// https://leetcode.cn/problems/search-in-rotated-sorted-array/description/
+
+class Solution {
+public:
+    int search(vector<int>& nums, int target) {
+        int n = nums.size();
+        int left = 0, right = n-1;
+        // left mid right 
+        // 5 6
+        //.    1 2 3 4 4.1 4.2
+        // 找半段有序数组，然后在有序数组里面找target；
+        // 由于前半段 和 后半段 一个是[mid, mid+1] 和 [mid-1,mid]的组合，所以后半段，缩小1个空间；
+        while(left < right) {
+            int mid = left + (right - left) / 2;
+            if(nums[mid] < nums[right]) {
+                if(nums[mid+1] <= target && target <= nums[right]) {
+                    left = mid+1;
+                } else {
+                    right = mid;
+                }
+            } else {
+                // 1 2 3 4 5 6
+                //.             0
+                if(nums[left] <= target && target <= nums[mid]) {
+                    right = mid;
+                } else {
+                    left = mid + 1;
+                }
+            }
+        }
+        if(nums[left] == target) return left;
+        return -1;
+    }
+};
+
+
+// -------- 方法2； 3次二分， 先找最小，前半段、后半段找>=
+public:
+    int search(vector<int>& nums, int target) {
+
+        // 方法二
+        //3次二分；最小值；前半段；后半段；
+        int n = nums.size();
+        int left = 0, right = nums.size()-1;
+        //先找最小值；
+        while(left < right) {
+            int mid = left + (right-left) / 2;
+            if(nums[mid] > nums[right]){
+                left = mid + 1;
+            } else {
+                right = mid;
+            }
+        }
+        int min = left;
+
+         // >= 的第一个数
+        left = 0 ,right = min-1;
+        while(left < right)
+        {
+            int mid = left + (right-left) / 2;
+            if(nums[mid] < target){
+                left = mid + 1;
+            } else {
+                right = mid;
+            }
+        }
+        // 额外判断left的元素 是否相等。 出循环只保证了>=
+        if(nums[left] == target) {
+            return left;
+        }
+        // 判断右边第一个>=的数
+        left = min, right = n-1;
+        while(left < right) {
+            int mid = left + (right-left) / 2;
+            if(nums[mid] < target){
+                left = mid + 1;
+            } else {
+                right = mid;
+            }
+        }
+        if(nums[left] == target) return left;
+        return -1;
+    }
+};
+
+81. 搜索旋转排序数组 II；
+https://leetcode.cn/problems/search-in-rotated-sorted-array-ii/description/
+// 和 上题区别， nums中存在重复元素， 因此针对重复元素right-- 即可
+
+class Solution {
+public:
+    bool search(vector<int>& nums, int target) {
+        int n = nums.size();
+        int left = 0, right = n - 1;
+        while(left < right) {
+            int mid = left + (right - left) / 2;
+            if(nums[mid] < nums[right]) {
+                if(nums[mid+1] <= target && target <= nums[right]) {
+                    left = mid+1;
+                } else {
+                    right = mid;
+                }
+            } else if (nums[mid] > nums[right]) {
+                if(nums[left] <= target && target <= nums[mid]) {
+                    right = mid;
+                } else {
+                    left = mid + 1;
+                }
+            } else {
+                if(nums[right] == target) return true;
+                right--;
+            }
+        }
+        if(nums[left] == target) return true;
+        return false;
+    }
+};
+
+
+162. 寻找峰值；
+// https://suanfa8.com/binary-search/solutions-1/0162-find-peak-element
+注意相邻的两个元素不想等，所以判断mid 和 mid+1 元素即可
+//一个和mid 的右边元素比较，一个和mid的左边元素比较
+// nums[i] != nums[i + 1] 所以不用考虑等于的情况
+class Solution {
+public:
+    int findPeakElement(vector<int>& nums) {
+        int n = nums.size();
+        int left = 0, right = n - 1;
+        while(left < right) {
+            int mid = left + (right - left) / 2;
+            if(nums[mid] < nums[mid+1]) {
+                left = mid + 1;
+            } else {
+                right = mid;
+            }
+        }
+        return left;
+    }
+};
+
+
+class Solution {
+public:
+    int findPeakElement(vector<int>& nums) {
+        int n = nums.size();
+        int left = 0, right = n - 1;
+        while(left < right) {
+            int mid = left + (right - left + 1) / 2;
+            if(nums[mid-1] > nums[mid]) {
+                right = mid - 1;
+            } else {
+                left = mid;
+            }
+        }
+        return left;
+    }
+};
+
+
+275. H 指数 II；
+https://leetcode.cn/problems/h-index-ii/description/
+// 本质就是找一个idx， 要求 nums[idx] >= (n-1) - idx + 1
+// H是论文数量
+class Solution {
+public:
+    int hIndex(vector<int>& citations) {
+        // if(citations.size() == 1) return 1;
+        int n = citations.size();
+        if(citations[n-1] == 0) return 0; // 最后一个元素为0，直接为0
+        // 或者最后加nums[left] == 0,  return 0;
+        int left = 0, right = n-1;
+        while(left < right) {
+            int mid = left +(right - left) / 2;
+            if(citations[mid] < n - mid) {
+                left = mid + 1;
+            } else {
+                right = mid;
+            }
+        }
+        return n-left;
+    }
+};
+
+
+611. 有效三角形的个数
+https://leetcode.cn/problems/valid-triangle-number/description/
+// 两层for循环， 找 >= sum1 + sum2 的第一个数
+
+class Solution {
+public:
+    int triangleNumber(vector<int>& nums) {
+        sort(nums.begin(), nums.end());
+        int res = 0;
+        int n = nums.size();
+        for(int i = 0; i < n-2; i++) {
+            for(int j = i + 1; j < n-1; j++) {
+                // 找到第一个 >= 两边之和的下标
+                int sum = nums[i] + nums[j];
+                int left = j + 1, right = n; // 注意right 的 idx=n， 因为可以取到n，
+                while(left < right) {
+                    int mid = (right - left) / 2 + left;
+                    if(nums[mid] < sum) {
+                        left = mid + 1;
+                    } else if (nums[mid] > sum) {
+                        right = mid;
+                    } else {
+                        right = mid;
+                    }
+                }
+                res += left - j - 1;
+                
+            }
+        }
+        return res;
+    }
+};
+
+
+658. 找到 K 个最接近的元素；
+https://leetcode.cn/problems/find-k-closest-elements/description/
+class Solution {
+public:
+    vector<int> findClosestElements(vector<int>& arr, int k, int x) {
+        int n = arr.size();
+        int left = 0, right = n - k; // 左边界可能的区间，在左边界可能的区间找idx, idx+k的区间数
+        // 这里确定左边界后，圈定的窗口是[k+1]的大小； 从[k+1]大小的窗口里面去掉一个左边界或者右边界的值 就是[k]的大小；
+        // x离右边近： 左边界一定可以收缩一个。 【k+1] -> [k] 所以左边界点 left -> mid+1
+            // 窗口需要右移,所以动左边界
+        // x离左边近： 
+            // 窗口需要左移动，所以动右边界；
+            // 右边界一定可以收缩一个。  判断的是[k+1]窗口的左右距离。以mid为起始点的k长度窗口仍然有可能，所以right = k;
+            // 一定不能在右移了， right = mid; 在右移动的话，x会更靠近
+        // 当x离 左边比较远的时候，要收缩左边界，所以。left = mid + 1;
+        // 反之收缩右边界 right = mid;
+        // 🟰的时候  收缩右边界， 因为是字母序小的
+        while(left < right) {
+            int mid = left + (right - left) / 2;
+            if(x - arr[mid] > arr[mid + k] - x) {
+                left = mid + 1;
+            } else {
+                right = mid;
+            }
+        }
+        vector<int> res;
+        for(int i = left; i < left + k; i++) {
+            res.push_back(arr[i]);
+        }
+        return res;
+    }
+};
+
+
+
+744. 寻找比目标字母大的最小字母；
+https://leetcode.cn/problems/find-smallest-letter-greater-than-target/description/
+
+public class Solution {
+
+    public char nextGreatestLetter(char[] letters, char target) {
+        int len = letters.length;
+        int left = 0;
+        int right = len;
+        while (left < right){
+            int mid = (left + right) >>> 1;
+            if (letters[mid] <= target){
+                // 下一轮搜索的区间是：[mid + 1, right]
+                left = mid + 1;
+            }else {
+                right = mid;
+            }
+        }
+        // 因为有可能不存在
+        if (left == len){
+            return letters[0];
+        }
+        return letters[left];
+    }
+}
+
+
+852. 山脉数组的峰顶索引
+https://leetcode.cn/problems/peak-index-in-a-mountain-array/description/
+山峰数组没有连续2个值相等的情况
+
+class Solution {
+public:
+    int peakIndexInMountainArray(vector<int>& arr) {
+        int n = arr.size();
+        int left = 0, right = n-2; 
+        while(left < right) {
+            int mid = left + (right - left) / 2;
+            if(arr[mid] > arr[mid+1]) {
+                right = mid;
+            } else {
+                left = mid + 1;
+            }
+            // arr[mid] == arr[mid+1]的时候， left 或者 right 都可以移动
+            // if(arr[mid] < arr[mid+1]) {
+            //     left = mid + 1;
+            // } else {
+            //     right = mid;
+            // }
+        }
+        return left; // 一定存在峰值，所以不需要判断 nums[left]是不是我们所要的
+    }
+};
+
+1095. 山脉数组中查找目标值
+https://leetcode.cn/problems/find-in-mountain-array/description/
+1)先找峰顶元素
+2） 前半段找target， 
+3）后半段找target
+
+
+/**
+ * // This is the MountainArray's API interface.
+ * // You should not implement it, or speculate about its implementation
+ * class MountainArray {
+ *   public:
+ *     int get(int index);
+ *     int length();
+ * };
+ */
+
+class Solution {
+public:
+    int findInMountainArray(int target, MountainArray &mountainArr) {
+        int n = mountainArr.length();
+        // MountainArray.get(k)
+        int left = 0, right = n-2;
+        // 1)找峰值
+        right = n -2;
+        while(left < right) {
+            int mid = left + (right - left) / 2;
+            // 无法用旋转数据一样的方法
+            // 旋转数据的每一个数最多xiangdeng. 比如 [ 1 2 3 0 1]
+            // 而多峰 是 【1 2 3 4 5 3 1】可能会有2个3， 无法用 mid和right来判断 在mid左侧还是右侧
+            
+            if(mountainArr.get(mid) <= mountainArr.get(mid+1)) {
+                left = mid + 1;
+            } else {
+                right = mid;
+            }
+        }
+        int top = left;
+        left = 0, right = top;  // 这里right 可以换成Top+1 ， 找>=target的第一个位置
+        while(left < right) {
+            int mid = left + (right - left) / 2;
+            // mountainArr.get(mid) == target 的时候， 
+            // left = mid 或者 right = mid 都可以，但是此时left 已经 mid+1，right = mid了，所以并到 right去
+            if(mountainArr.get(mid) < target) {
+                left = mid+1;
+            } else {
+                right = mid;
+            }
+        }
+        if(mountainArr.get(left) == target) return left;
+        left = top, right = n - 1;  // 这个地方因为是 「递减」的 所以right不能换成 n
+        while(left < right) {
+            int mid = left + (right - left+1) / 2;
+            if(mountainArr.get(mid) < target) {
+                right = mid-1;
+            } else {
+                left = mid;
+            }
+        }
+        if(mountainArr.get(left) == target) return left;
+        return -1;
+    }
+};
+
+
+int searchInsert(vector<int>& nums, int target) {
+        int left = 0, right = nums.size(); 
+        // right = n 的时候， left < right 出来的时候 就是  left = right， 极端情况right = n ； 这个不用做判断
+        while(left < right) {
+            int mid = left + (right-left)/2;
+            if(nums[mid] < target) {
+                left = mid + 1;
+            } else {
+                right = mid;
+            }
+        }
+        return left;
+    }
+
+
+        if(nums1.size() > nums2.size()) {
+            vector<int> tmp = nums1;
+            nums1 = nums2;
+            nums2 = tmp;
+        }
+        int m = nums1.size();
+        int n = nums2.size();
+        // nums1 中找切割点
+        // 元素个数 m+n+1 / 2
+        int cnt = (m + n + 1) / 2;
+        int left = 0, right = m;
+        while(left < right) {
+            int mid = left + (right - left + 1) / 2;
+            int idx = cnt - mid;
+            if(nums1[mid-1] > nums2[idx]) {
+                right = mid - 1;
+            } else {
+                left = mid;
+            }
+        }
+        // left 为切割点
+        // 特殊情况
+        int idx2 = cnt - left;
+        int left1 = left == 0 ? INT_MIN : nums1[left - 1];
+        int right1 = left == m ?INT_MAX : nums1[left];
+
+        int left2 = idx2 == 0 ? INT_MIN : nums2[idx2 - 1];
+        int right2 = idx2 == n ? INT_MAX : nums2[idx2];
+
+        if((m+n)%2 == 1) {
+            return max(left1, left2);
+        }
+        return (max(left1, left2) + min(right1, right2) ) / 2.0;
+
+4. 寻找两个正序数组的中位数
+https://leetcode.cn/problems/median-of-two-sorted-arrays/description/
+public class Solution {
+    public double findMedianSortedArrays(int[] nums1, int[] nums2) {
+        if (nums1.length > nums2.length) {
+            int[] temp = nums1;
+            nums1 = nums2;
+            nums2 = temp;
+        }
+        int m = nums1.length;
+        int n = nums2.length;
+        // 分割线左边的所有元素需要满足的个数 m + (n - m + 1) / 2;
+        int totalLeft = (m + n + 1) / 2;
+        // 在 nums1 的区间 [0, m] 里查找恰当的分割线，
+        // 使得 nums1[i - 1] <= nums2[j] && nums2[j - 1] <= nums1[i]
+        int left = 0;
+        int right = m;
+
+        while (left < right) {
+            int i = left + (right - left + 1) / 2;
+            int j = totalLeft - i;
+            if (nums1[i - 1] > nums2[j]) {
+                right = i - 1;
+            } else {
+                left = i;
+            }
+        }
+
+        int i = left;
+        int j = totalLeft - i;
+
+        int nums1LeftMax = i == 0 ? Integer.MIN_VALUE : nums1[i - 1];
+        int nums1RightMin = i == m ? Integer.MAX_VALUE : nums1[i];
+        int nums2LeftMax = j == 0 ? Integer.MIN_VALUE : nums2[j - 1];
+        int nums2RightMin = j == n ? Integer.MAX_VALUE : nums2[j];
+
+        if (((m + n) % 2) == 1) {
+            return Math.max(nums1LeftMax, nums2LeftMax);
+        } else {
+            return (double) ((Math.max(nums1LeftMax, nums2LeftMax) + Math.min(nums1RightMin, nums2RightMin))) / 2;
+        }
+    }
+
+}
+
+// 如果不把长度短的放前面， 会出现越界等行为
+// 【关于把短数组放前面：1）比如数组长度为 10， 1 ；    那么一边要分5个数， 当nums1的分割线很小的时候，num2就会出现负数】
+// 【反之就不会， 因此我们必须在短的数组上搜索 i】
+class Solution {
+public:
+    double findMedianSortedArrays(vector<int>& nums1, vector<int>& nums2) {
+        if (nums1.size() > nums2.size()) {
+            vector<int> temp = nums1;
+            nums1 = nums2;
+            nums2 = temp;
+        }
+        // 找分割线  left1 right1.  ;left2 right2;
+        // 因为同一个数组，所以 left1 <= right1 ， left2<=right2，接着要保证 left1<=right2  left2<=right1;
+        // 同时分割线左边元素为中位数[idx的左边]。【idx左边 + idx】 
+        int m = nums1.size();
+        int n = nums2.size();
+        int length = m + n;
+        int total_num = (length + 1)/ 2; // 分割线左边的元素个数
+        // 0  ~  m 找分割线
+        int left = 0, right = m;
+        while(left < right) {
+            int i = left + (right - left + 1) / 2; // nums1 有 i个元素[0, i-1]
+            int j = total_num - i; // num2 有 total -i 个元素[0, j-1] 
+            if(nums1[i-1] > nums2[j]) {
+                right = i - 1;
+            } else {
+                left = i;
+            }
+        }
+        int i = left;
+        int j = total_num - i;
+        int left_max1, left_max2;
+        int right_min1, right_min2;
+        left_max1 = i == 0?INT_MIN : nums1[i-1];
+        right_min1 = i == m?INT_MAX: nums1[i];
+        left_max2 = j == 0?INT_MIN : nums2[j-1];
+        right_min2 = j == n?INT_MAX: nums2[j];
+        if(length%2 == 1) {
+            return max(left_max1, left_max2);
+        }  else {
+            return (max(left_max1, left_max2) + min(right_min1, right_min2)) / 2.0;
+        }
+    }
+    
+};
+
+
+
+
+69. x 的平方根 
+https://leetcode.cn/problems/sqrtx/description/
+
+class Solution {
+public:
+    int mySqrt(int x) {
+        if(x == 0) return 0;
+        if(x == 1) return 1;
+        int left = 1;
+        int right = x;
+        while(left < right) {
+            int mid = (right - left ) / 2 + left;
+            // 边界缩减为mid   mid-1的时候，由于向下取整拿到left，所以会hang死，[left, left+1]  mid会一直是left
+            // 处理方式： 1） mid 的时候向上取整；   
+            if(x / mid == mid) {
+                return mid;
+            } else if(mid  < x/mid){
+                left = mid;
+            } else {
+                right = mid - 1;
+            }
+            
+        }
+        return left;
+    }
+};
+
+
+436. 寻找右区间
+https://leetcode.cn/problems/find-right-interval/description/
+// 1、map 记录 每个区间left 在原数组的idx
+// 2、sort 排序；
+// 3、依次寻找 interval[i][1] 作为target， left 和right 下 [interval][x][0] >=target的值 
+
+cclass Solution {
+public:
+    vector<int> findRightInterval(vector<vector<int>>& intervals) {
+        vector<int> res;
+
+        vector<vector<int>> tmp = intervals;
+        int n = intervals.size();
+
+        map<int, int> mp; // key = left， value 为原数组的idx
+        for(int i = 0; i < n; i++) {
+            mp[intervals[i][0]] = i;
+        }
+
+        sort(tmp.begin(), tmp.end());
+
+        
+        for(int i = 0; i < n; i++) {
+            int target = intervals[i][1];
+            // sort 中 找>= target 的 left元素
+            int left = 0, right = n-1;
+            while(left < right) {
+                int mid = left + (right - left) / 2;
+                if(tmp[mid][0] < target) {
+                    left = mid + 1;
+                } else {
+                    right = mid;
+                }
+            }
+            if(tmp[left][0] >= target) { // 这里配合 right = n-1;// 圈定了
+            // if(left < n) { // 这里配合 right = n; 最后跳出循环的一定是>=target，或者越界
+                res.push_back(mp[tmp[left][0]]);
+            } else {
+                res.push_back(-1);
+            }
+        }
+        return res;
+    }
+};
+
+
+287. 寻找重复数
+
+https://leetcode.cn/problems/find-the-duplicate-number/description/
+两种方法： 
+1、二分； 用抽屉原则；数num中<=mid的个数 应该为mid个
+2、快慢指针， O(n);
+
+
+class Solution {
+public:
+    int findDuplicate(vector<int>& nums) {
+
+        // 方法1， 0出发的一定有环； 因为数字是[1,n]之间，没办法有数指向0
+        int slow = 0, fast = 0;
+        do {
+            slow = nums[slow];
+            fast = nums[nums[fast]];
+        }while(slow != fast);
+        slow = 0;
+        while(slow != fast ){
+            slow = nums[slow];
+            fast = nums[fast];
+        }
+        return slow;
+
+        // 方法2
+        int n = nums.size();
+        int left = 1, right = n-1;
+        while(left < right) {
+            int mid = left + (right - left) / 2;
+            int cnt = 0;
+            // 抽屉原理 mid为间隔，那么<=mid 的时候，应该有mid个，左边才不缺数
+            for(auto num : nums) {
+                if(num <= mid) cnt++;  // 
+            }
+            if(cnt > mid) { // cnt> mid, 说明 <=mid的区间，某个抽屉放了2个
+                right = mid;
+            } else {
+                left = mid + 1;
+            }
+        }
+        return left;
+    }
+};
+
+
+378. 有序矩阵中第 K 小的元素
+https://leetcode.cn/problems/kth-smallest-element-in-a-sorted-matrix/description/
+// 二分某个数mid；  判断数组中<=mid的数是否有cnt个。
+// cnt>=k个话，可能为答案； 否则一定不是答案；
+class Solution {
+public:
+    int GetCount(int target, vector<vector<int>>& matrix) {
+        int n = matrix.size();
+        int cnt = 0;
+        int i = 0, j = n-1;
+        while(i<n && j>=0) {
+            if(matrix[i][j] <= target) {
+                cnt += j+1;
+                i++;
+            } else {
+                j--;
+            }
+        }
+        return cnt;
+    }
+    int kthSmallest(vector<vector<int>>& matrix, int k) {
+        int n = matrix.size();
+        int left = matrix[0][0], right = matrix[n-1][n-1];
+        while(left < right) {
+            int mid = left + (right - left) / 2;
+            int cnt = GetCount(mid, matrix); // <= mid的个数
+            if(cnt < k) {
+                left = mid + 1;
+            } else { // >= k 
+                right = mid;
+            }
+        }
+        // left 其实是>=某个元素的最小数；
+        // 比如 >=13 < 15 最终的k都是8， 但是这个循环是寻找>=13的13的这个数的第一个数，那么一定是13
+        return left;
+    }
+};
+
+
+875. 爱吃香蕉的珂珂
+
+https://leetcode.cn/problems/koko-eating-bananas/description/
+
+//二分速度；
+// 时间复杂度：n * log(n)
+
+class Solution {
+public:
+    int CntPiles(const vector<int>& piles, const int& cnt) {
+        long res = 0;
+        for(auto pile : piles) {
+            res += (pile + cnt - 1) / cnt;
+        }
+        return res;
+    }
+    int minEatingSpeed(vector<int>& piles, int h) {
+        int right = 1;
+        int left = 1;
+        for(auto pile : piles) {
+            right = max(right, pile);
+        }
+
+        while(left < right) {
+            int mid = left + (right - left) / 2;
+            int cnt = CntPiles(piles, mid); // 返回需要的小时，需要<=h
+            if(cnt > h) {
+                left = mid + 1;
+            } else {
+                right = mid;
+            }
+        }
+        return left;
+    }
+};
+
+
+
+410. 分割数组的最大值
+
+https://leetcode.cn/problems/split-array-largest-sum/description/
+
+// 寻找一个value， 使得用value 去切分数组的split 个数 <=m ，可以继续合并， >m ， value一定不行；
+// 区间个数 用 cnt, cur_sum > thred 去 dp获取；
+
+class Solution {
+public:
+    int SplitCnt(const vector<int>& nums, const int& thred) {
+        int cnt = 1;
+        int cur = 0;
+        for(auto num : nums) {
+            if(cur + num > thred) {
+                cnt++;
+                cur = num;
+            } else {
+                cur += num;
+            }
+        }
+        return cnt;
+    }
+    int splitArray(vector<int>& nums, int k) {
+        // return SplitCnt(nums,6);
+        // 找一个 value，分割nums后，子数组个数==k
+        int left = 0, right = 0;
+        for(auto num : nums) {
+            left = max(left, num);
+            right += num;
+        }
+        while(left < right) {
+            int mid = left + (right - left) / 2;
+            int split_cnt = SplitCnt(nums, mid);
+            if(split_cnt > k) {
+                left = mid + 1;
+            } else {
+                right = mid;
+            }
+        }
+        return left;
+    }
+};
+
+
+LCP 12. 小张刷题计划
+https://leetcode.cn/problems/xiao-zhang-shua-ti-ji-hua/description/
+// 类似410
+// 本题是找一个value ，left = 0， right = sum(all);
+// 切分数组，  让  数组区间和-区间max > thred，区间个数++
+// 区间个数要 <= ，  >的话一定不成立
+
+class Solution {
+public:
+    int SplitCnt(vector<int>& time, const int& threshhold){
+        int split_cnt = 1;
+        int cur_sum = 0;
+        int cur_max = 0;
+        for(auto ti : time) {
+            cur_max = max(cur_max, ti); 
+            if(cur_sum + ti - cur_max > threshhold) {
+                split_cnt++;
+                cur_sum = ti;
+                
+                cur_max = ti; // 新窗口
+            } else {
+                cur_sum += ti;
+            }
+        }
+        return split_cnt;
+    }
+
+    int minTime(vector<int>& time, int m) {
+        // return SplitCnt(time, 3)[1];
+        // 找到一个value， 把time 分成m块； 各块之和最小；
+        int left = 0;
+        int right = 1;
+        for(auto ti : time) {
+            right += ti;
+        }
+        int res = right;
+        int interval_cnt = m;
+        while(left < right) {
+            int sum = left + (right - left) / 2;
+            // sum split成 几块
+            int split_cnt = SplitCnt(time, sum);
+            // 可以<= ， 如果>m的话， 这个值肯定小
+            if(split_cnt > interval_cnt) {
+                left = sum + 1;
+            }else {
+                right = sum;
+            }
+        }
+        return left;
+    }
+};
+
+
+1011. 在 D 天内送达包裹的能力
+https://leetcode.cn/problems/capacity-to-ship-packages-within-d-days/description/
+
+// 和上面的题一样，注意left =max(nums) , right = sum(nums)
+
+
+class Solution {
+public:
+    int SplitNums(vector<int>& weights, int thred){
+        int splits = 1;
+        int cur_sum = 0;
+        for(auto weight : weights) {
+            if(cur_sum + weight > thred) {
+                splits++;
+                cur_sum = weight;
+            } else {
+                cur_sum += weight;
+            }
+        }
+        return splits;
+    }
+    int shipWithinDays(vector<int>& weights, int days) {
+        // return SplitNums(weights, 2);
+        int left = 1;
+        int right = 0;
+        for(auto weight : weights) {
+            right += weight;
+            left = max(left, weight);
+        }
+
+        while (left < right) {
+            int loads = left + (right - left) / 2;
+            // 寻找一个loads 可以切分数组；
+            int cnt = SplitNums(weights, loads);
+            if(cnt > days) {
+                left = loads + 1;
+            } else {
+                right = loads;
+            }
+        }
+        return left;
+    }
+};
+
+
+
+1283. 使结果不超过阈值的最小除数
+
+https://leetcode.cn/problems/find-the-smallest-divisor-given-a-threshold/description/
+
+class Solution {
+public:
+    int GetCnt(vector<int>& nums, int value) {
+        int res = 0;
+        for(auto num : nums) {
+            res += (num + value - 1 ) / value;
+        }
+        return res;
+    }
+    int smallestDivisor(vector<int>& nums, int threshold) {
+        //   二分找一个数 [1, max] 
+        int left = 1;
+        int right = 1;
+        for(auto num : nums) {
+            right = max(right, num);
+        }
+        while (left < right) {
+            int value = left + (right - left) / 2;
+            int cnt = GetCnt(nums, value);
+            if(cnt > threshold) {
+                left = value + 1;
+            } else {
+                right = value;
+            }
+        }
+        return left;
+    }
+};
+
+
+1482. 制作 m 束花所需的最少天数
+https://leetcode.cn/problems/minimum-number-of-days-to-make-m-bouquets/description/
+
+
+class Solution {
+public:
+    int GetCnt(vector<int>& bloomDay, int value, int k) {
+        int count = 0;
+        int res = 0;
+        // 1   10 3 10 2
+        // idx  
+        int last_idx = 0; // 当前窗口开始的索引
+        for(int i = 0; i < bloomDay.size(); i++){
+            if(bloomDay[i] <= value) {
+                count++;
+            } else {
+                count = 0;
+                continue;
+            }
+            // 连续n朵，制作一束花
+            if(count == k) {
+                res++;
+                count = 0;
+            }
+        }
+        return res;
+    }
+    int minDays(vector<int>& bloomDay, int m, int k) {
+        // return GetCnt(bloomDay, 9,3);
+        // [1, max] 找一个value 来切割； 切割成n个块；每个块的值都要<=value, 且连续长度==k
+        int left = INT_MAX;
+        int right = 1;
+        for(auto bloom : bloomDay) {
+            right = max(right, bloom);
+            left = min(left, bloom);
+        }
+        while(left < right) {
+            int value = left + (right - left) / 2;
+            int cnt = GetCnt(bloomDay, value, k);
+            
+            if (cnt < m) {
+                left = value + 1;
+            } else {
+                right = value;
+            }
+        }
+        // 特例判断最后一次； 也可以前置判断m*k>len的时候，return -1
+        int cnt = GetCnt(bloomDay, left, k);
+        if(cnt>=m) return left;
+        return -1;
+    }
+
+};
+
+
+
+1552. 两球之间的磁力
+https://leetcode.cn/problems/magnetic-force-between-two-balls/description/
+// 这里先sort， 这样磁力计算就从小到大了，找到一个磁力value 去切分数组； distance >= value的就是新的切割点;
+// cnt < m 切割太少； right=mid-1;
+// cnt >= m 切割还行， 可能有更大的极值； left = mid;
+
+class Solution {
+public:
+    int Split(vector<int>& position, int value) {
+        // 第一个球磁力最小，一定放一个
+        int res = 1; 
+        int last = position[0];
+        for(int i = 1; i < position.size(); i++) {
+            if(position[i] - last >= value) {
+                res++;
+                last = position[i];
+            }
+        }
+        return res;
+    }
+    int maxDistance(vector<int>& position, int m) {
+        // 先排序了； 这样磁力就符合从小到大
+        sort(position.begin(), position.end());
+        int n = position.size();
+        int left = 1;
+        int right = position[n-1] - position[0];
+        while(left < right) {
+            int value = left + (right - left+1) / 2;
+            int cnt = Split(position, value); // 放几个球
+            // < m 球太少了， 磁力太大；
+            // >= m 球太多， 磁力太小
+            if(cnt < m) {
+                right = value-1;
+            }  else {
+                left = value;
+            }
+        }
+        return left;
+    }
+};
