@@ -1,0 +1,584 @@
+
+
+回溯：
+1、for(int i = 0) 代表从第一个点开始，后续可以从任何一个点开始；所以适合找全排序； 
+    而从第一个点开始的都需要用used来记录占用情况；同时如果used不reset，那么类似于找岛屿，后续会把相连的都标记上
+2、for(int i = begin) 代表从当前点往后，后续可以从后面的每一个点开始，所以适合找子集，
+    而从begin开始的话就不需要used，因为后续的点的状态都是未使用的
+3、树的递归： 本质是一次从root跟结点开始的回溯；。 很多网格问题可以从任意结点开始。
+因为此时只有root, root 就相当于i = 0；本质就是从for(int i = 0) idx = 0 开始，后面不for了，然后在root的位置依次去找left和rigiht
+4、树的路径 = sum target；   从root开始的target； 从left和 right 开始的 target - root->val； 以及后续的  left right开始的target；
+5、岛屿问题就是一
+
+// 1、全排列 // 全排列II有相同数
+// https://leetcode.cn/problems/permutations/description/?envType=study-plan-v2&envId=top-100-liked
+class Solution {
+public:
+    // https://leetcode.cn/problems/permutations/?envType=study-plan-v2&envId=top-100-liked
+    vector<vector<int>> res;
+    vector<vector<int>> permute(vector<int>& nums) {
+        // dfs 岛屿问题，是for循环每一个点， 不需要去回溯， 一直记录所有状态就行；
+        // 「回溯问题是每一个都可以开始，每一个遍历过的点在后续还能用到，所以要撤回」
+        // 区别： dfs是从每一个点开始【上下左右】去找部分区域；    而回溯问题是会for所有情况
+        // 比如 此题，如果for 所有点
+        // 比如 a b c ， 再以b为出发点遍历的时候 a也会用到
+        // backtrace 里面的for 就for 了所有起始点；
+        // 树的话 是 for了当前结点 可走到的点； left 或者right// 或者图论里面的上下左右；
+        vector<int> used(nums.size());
+        vector<int> path;
+        backtrace(nums, nums.size(), 0, used, path);
+        return res;
+    }
+    void backtrace(vector<int>& nums, int length, int depth, vector<int> &used, vector<int> &path) {
+        if(depth == length) {
+            res.push_back(path);
+            return;
+        }
+        // 类似深度优先遍历，只是说这里每一个都能用； 而树的遍历是只有left和right
+        for(int i = 0; i < length; i++) {
+            if(used[i] == 1) continue;
+            path.push_back(nums[i]); //做选择
+            used[i] = 1; // 设置已经用过
+            backtrace(nums, length, depth + 1, used, path); // 下一层
+            used[i] = 0; // 撤销
+            path.pop_back();
+        }
+    }
+};
+
+// 全排列 II， 有重复数字
+https://leetcode.cn/problems/permutations-ii/description/
+class Solution {
+public:
+    vector<vector<int>> res;
+    void dfs(vector<int>& nums, int depth, vector<int>& path, vector<int>& used) {
+        if(depth == nums.size()) {
+            res.push_back(path);
+            return;
+        }
+
+        for(int i = 0; i < nums.size(); i++) {
+            if(i-1>=0 && nums[i] == nums[i-1] && used[i-1] == 0) continue;
+            if(used[i] == 1) continue;
+            used[i] = 1;
+            path.push_back(nums[i]);
+            dfs(nums, depth+1, path, used);
+            path.pop_back();
+            used[i] = 0;
+        }
+    }
+    vector<vector<int>> permuteUnique(vector<int>& nums) {
+        sort(nums.begin(), nums.end());
+        int n = nums.size();
+        vector<int> path;
+        vector<int> used(n, 0);
+        dfs(nums, 0, path, used);
+        return res;
+    }
+};
+
+// 2、子集  [nums的元素互不相同]
+// https://leetcode.cn/problems/subsets/description/?envType=study-plan-v2&envId=top-100-liked
+class Solution {
+public:
+    vector<vector<int>> res;
+    vector<vector<int>> subsets(vector<int>& nums) {
+        int n = nums.size();
+        vector<int> path;
+        backtrace(nums, 0, path);
+        return res;
+    }
+    void backtrace(vector<int>& nums, int begin, vector<int>& path) {
+        res.push_back(path);
+        if(begin == nums.size())
+            return;
+        // 这里表示开始的地方可以从任意位置；
+        for(int i = begin; i < nums.size(); i++) {
+            path.push_back(nums[i]);
+            backtrace(nums, i+1, path);
+            path.pop_back();
+        }
+        
+    }
+};
+
+
+// 3、子集II  【nums可能包含重复元素】
+// 较于之前的子集I，新增一次排序即可
+// https://leetcode.cn/problems/subsets-ii/description/
+class Solution {
+public:
+    vector<vector<int>> res;
+    vector<vector<int>> subsetsWithDup(vector<int>& nums) {
+        int n = nums.size();
+        sort(nums.begin(), nums.end());
+        vector<int> path;
+        backtrack(nums, 0, path);
+        return res;
+    }
+    void backtrack(vector<int>& nums, int begin, vector<int> &path) {
+        res.push_back(path);
+        for(int i = begin; i < nums.size(); i++) {
+            if(i>begin && nums[i] == nums[i-1]) continue;  // i 是从begin开始，如果有重复的直接continue
+            path.push_back(nums[i]);
+            backtrack(nums, i+1, path);
+            path.pop_back();
+        }
+    }
+
+};
+
+4、 下一个排列
+// https://leetcode.cn/problems/next-permutation/
+class Solution {
+public:
+    // for 里面找到了 就直接return，还完了。 没找到就rrverse全部
+    void nextPermutation(vector<int>& nums) {
+        int n = nums.size();
+        for(int i = n-1; i>0; i--) {
+            if(nums[i-1] < nums[i]) {
+                int idx = i - 1;
+                for(int j = n - 1; j > idx; j--) {
+                    if(nums[j] > nums[idx]) {
+                        swap(nums[idx], nums[j]);
+                        reverse(nums.begin() + idx + 1, nums.end());
+                        return;
+                    }
+                }
+                break;
+            }
+        }
+        reverse(nums.begin(), nums.end());
+        return;
+    }
+};
+
+784. 字母大小写全排列
+https://leetcode.cn/problems/letter-case-permutation/description/
+class Solution {
+public:
+    vector<string> res;
+    void dfs(string s, int depth, int n, string & path) {
+        if(depth == n) {
+            res.push_back(path);
+            return;
+        }
+        if(s[depth] >= '0' && s[depth] <= '9') {
+            path.push_back(s[depth]);
+            dfs(s, depth+1, n, path);
+            path.pop_back();
+        }  else {
+            vector<int> tmp{toupper(s[depth]), tolower(s[depth])};
+            for(auto c : tmp) {
+                path.push_back(c);
+                dfs(s, depth+1, n, path);
+                path.pop_back();
+            }
+        }
+    }
+    vector<string> letterCasePermutation(string s) {
+        int n = s.size();
+        string path;
+        dfs(s, 0, n, path);
+        return res;
+    }
+};
+
+// 4、 电话号码的字母组合
+// 全排列与全子集的结合题
+// https://leetcode.cn/problems/letter-combinations-of-a-phone-number/?envType=study-plan-v2&envId=top-100-liked
+class Solution {
+public:
+    vector<string> res;
+    unordered_map<char, string> m;
+    vector<string> letterCombinations(string digits) {
+        if(digits.empty()) return {};
+        m['2']="abc";
+        m['3']="def";
+        m['4']="ghi";
+        m['5']="jkl";
+        m['6']="nmo";
+        m['7']="pqrs";
+        m['8']="tuv";
+        m['9']="wxyz";
+        string path;
+        backtrace(digits, 0, path);
+        return res;
+    }
+    void backtrace(string& digits, int begin, string& path) {
+        if(begin == digits.size()) {
+            res.push_back(path);
+            return;
+        }
+        // 不for digits，是因为开始的地方只能从初始位置
+        // for 从i= 0 开始，就是全排列， 但是要记录used
+        // for 从 i = begin 开始，就是找子串，可以是一部分
+        // 这里是全排列，所以要从0开始， 但是 for每一个位置的起点是不符合提议的；比如abcd，只需要从a开始的答案，不需要从bcd开始答案，所以外层for移除
+        // 这里多了一层电话号码的映射 所以加上；
+        for(auto c : m[digits[begin]]) {
+            path.push_back(c);
+            backtrace(digits, begin+1, path);
+            path.pop_back();
+        }
+    }
+};
+
+// 5 组合总和
+// https://leetcode.cn/problems/combination-sum/?envType=study-plan-v2&envId=top-100-liked
+
+class Solution {
+public:
+vector<vector<int>> res;
+    // https://leetcode.cn/problems/combination-sum/
+    // 何时用begin，何时用used，
+    // used： 排列问题 223和232不一样， 可以随便挑
+    // begin： 组合问题， 223和232是一样的, 当前往后挑
+    vector<vector<int>> combinationSum(vector<int>& candidates, int target) {
+        vector<int> path;
+        sort(candidates.begin(), candidates.end());
+        // backtrace(candidates, 0, target, path);
+        backtrace2(candidates, 0, 0, target, path);
+        return res;
+        // 2 - 2 -3 和 232重复 是因为 23再去找的时候回头找了2,形成232， 但是这种形式在223用过了，所以用begin限制一下
+    }
+    void backtrace(vector<int>& candidates, int begin, int target, vector<int>& path) {
+        if(target == 0) {
+            res.push_back(path);
+            return;
+        }
+        if(target < 0) return;
+        for(int i = begin; i < candidates.size(); i++) {
+            path.push_back(candidates[i]);
+            backtrace(candidates, i, target - candidates[i], path); // 注意这里从i开始
+            path.pop_back();
+        }
+    }
+    void backtrace2(vector<int>& candidates, int begin, int sum, int target, vector<int>& path) {
+        if(sum == target) {
+            res.push_back(path);
+            return;
+        }
+        if(sum > target) return;
+        for(int i = begin; i < candidates.size(); i++) {
+            path.push_back(candidates[i]);
+            backtrace2(candidates, i, sum+candidates[i], target, path);
+            path.pop_back();
+        }
+    }
+
+
+};
+
+// 77 组合， 1～n中的k个数组合
+// https://leetcode.cn/problems/combinations/
+class Solution {
+public:
+    vector<vector<int>> res;
+    void backtrace(int n, int begin, int k, vector<int>& path) {
+        if(path.size() == k) {
+            res.push_back(path);
+            return;
+        }
+        // nums[i] 这里其实就是取Nums[i]，值就是 i + 1
+        for(int i = begin; i < n; i++) {
+            int key = i + 1;
+            path.push_back(key);
+            backtrace(n, i+1, k, path);
+            path.pop_back();
+        }
+    } 
+    vector<vector<int>> combine(int n, int k) {
+        // 1~n k个数. 1 2 3 4 5 6.  n = 6 k = 3
+        vector<int> path;
+        backtrace(n, 0, k, path);
+        return res;
+    }
+};
+
+
+// 22 括号生成
+// https://leetcode.cn/problems/generate-parentheses/description/?envType=study-plan-v2&envId=top-100-liked
+class Solution {
+public:
+    vector<string> res;
+    int flag = 0; // left++, right--
+    vector<string> generateParenthesis(int n) {
+        string path;
+        backtrace(n, path, 0);
+        return res;
+    }
+    // depth 似乎没啥用， depth == 2*n，可以用path.size来判断
+    void backtrace(int n, string& path, int depth) {
+        if(flag<0) return;  //先出现 右括号，剪枝
+        if(flag>2*n-depth) return; // 出现的左括号 > 剩下的未填充数
+        if(depth == 2*n ) {
+            res.push_back(path);
+            return; // 如果这里没有return， 其实会在 if(flag>2*n-depth) return;
+        }
+
+        // 从idx=0 开始，而不是任意位置开始，所以不需要for， 每个位置只有2种选择
+        path.push_back('(');
+        flag++;
+        backtrace(n, path, depth+1);
+        flag--;
+        path.pop_back();
+
+        path.push_back(')');
+        flag--;
+        backtrace(n, path, depth+1);
+        flag++;
+        path.pop_back();
+    }
+};
+
+// 23 判断一个括号字符串是否有效
+// https://leetcode.cn/problems/check-if-a-parentheses-string-can-be-valid/
+class Solution {
+public: 
+    bool res = false;
+    int flag = 0;
+    void backtrace(int cur, int n, string& s, string& locked) {
+        if(flag < 0) return;
+        if(abs(flag) > n-cur) return;
+        if(cur == n && flag == 0) {
+            res = true;
+            return;
+        } else if (cur == n) {
+            return;
+        }
+        if(locked[cur] == '0') {
+            // '('
+            flag++;
+            backtrace(cur+1, n, s, locked);
+            flag--;
+
+            // ')'
+            flag--;
+            backtrace(cur+1, n, s, locked);
+            flag++;
+        } else {
+            if(s[cur] == '(') {
+                flag++;
+                backtrace(cur+1, n, s, locked);
+                flag--;
+            } else {
+                // ')'
+                flag--;
+                backtrace(cur+1, n, s, locked);
+                flag++;
+            }
+        }
+    }
+    bool canBeValid(string s, string locked) {
+        //类似二叉树遍历， 从根节点开始
+        int n = s.size();
+        backtrace(0, n, s, locked);
+        return res;
+    }
+};
+
+
+class Solution {
+public:
+    bool canBeValid(string s, string locked) {
+        if (s.size() % 2) {
+            return false;
+        }
+        int mn = 0, mx = 0;
+        for(int i = 0; i < s.size(); i++) {
+            if(locked[i] == '1') {
+                int d = s[i] == '(' ? 1 : -1;
+                mx += d;
+                if(mx < 0) 
+                    return false;
+                mn += d;
+                if(mn < 0) mn = 1; // 说明之前某次用的( 不成立， 必须用)， 也就是-1 -> 1
+            } else {
+                // 可以改
+                mx += 1;
+                mn -= 1; // 从0 -> -1 不成立， 所以 应该是0->1
+                if(mn < 0) mn = 1;
+            }
+            
+        }
+        return mn == 0; // 说明最终 c 能是 0
+    }
+};
+
+// 24 单词搜索
+// https://leetcode.cn/problems/word-search/description/?envType=study-plan-v2&envId=top-100-liked
+class Solution {
+public:
+    bool res = false;
+    vector<int> direc{0, -1, 0, 1, 0};
+    void backtrace(vector<vector<char>>& board, string word, int depth, vector<vector<int>> &used, int r, int c) {
+        //先判断这个，因为depth+1后，r和c是下一个字母的idx，可能会越界，而depth
+        if(res == true) return;
+        if(depth == word.size()) {
+            res = true;
+            return;
+        }
+        if(r < 0 || r >= board.size() || c < 0 || c >= board[0].size()) return;
+        if(used[r][c] == 1) return;
+        if(board[r][c] != word[depth]) return;
+
+        used[r][c] = 1;
+        for(int i = 0; i < 4; i++) {
+            int x = r + direc[i];
+            int y = c + direc[i+1];
+            backtrace(board, word, depth + 1, used, x, y);
+        }
+        used[r][c] = 0;
+    }
+    bool exist(vector<vector<char>>& board, string word) {
+        int m = board.size();
+        int n = board[0].size();
+        for(int r = 0; r < m; r++) {
+            for(int c = 0; c < n; c++) {
+                if(board[r][c] == word[0]) {
+                    // string path;
+                    vector<vector<int>> used(m, vector<int>(n,0));
+                    backtrace(board, word, 0, used, r, c);
+                    if(res == true) return true; 
+                }
+            }
+        }
+        return false;
+    }
+};
+
+// 25 回文串
+// https://leetcode.cn/problems/palindrome-partitioning/submissions/559343038/?envType=study-plan-v2&envId=top-100-liked
+class Solution {
+public:
+    // 1、回溯，0~i-1 个位置 已经回文串了，  找 第i个位置到后面第j个位置形成的回文
+    // 2、 动态规划求位置i到位置j是否为回文串，避免重复计算
+    vector<vector<string>> res;
+    vector<vector<string>> partition(string s) {
+        vector<vector<bool>> dp(s.size(), vector<bool>(s.size())); // 表示dp[i][j] i~j是不是回文， 由s[i]==s[j] && dp[i+1][j-1]判断
+        for(int right = 0; right < s.size(); right++) {
+            for(int left = 0; left <= right; left++) {
+                if(s[left]==s[right] && (right-left<=2||dp[left+1][right-1]) )
+                    dp[left][right] = true;
+            }
+        }
+        vector<string> path;
+        backtrace(s, path, 0, dp);
+        return res;
+    }
+    void backtrace(string s, vector<string> &path, int begin, vector<vector<bool>> dp) {
+        if(begin == s.size()) {
+            res.push_back(path);
+            return;
+        }
+        for(int i = begin; i < s.size(); i++) {
+            if(dp[begin][i]) {
+                path.push_back(s.substr(begin, i-begin+1));
+                backtrace(s, path, i+1, dp);
+                path.pop_back();
+            }
+        }
+    }
+};
+
+// 26 N皇后
+// https://leetcode.cn/problems/n-queens/submissions/559346372/?envType=study-plan-v2&envId=top-100-liked
+class Solution {
+public:
+    // https://leetcode.cn/problems/n-queens/solutions/21986/gen-ju-di-46-ti-quan-pai-lie-de-hui-su-suan-fa-si-/
+    vector<vector<string>> res;
+    // 1， 2， 3， 4
+    // 5， 6， 7， 8
+    // 9，10，11，12
+    //13，14，15，16
+    // main为 13 [9,14] [5,10,15] [1,6,11,16] [2,7,12] [3,8] [4] 这条线
+    // j 为第几列； depth 为第几行
+    vector<vector<string>> solveNQueens(int n) {
+        // if(n==1) return {{"Q"}};
+        vector<int> main(2*n-1,0); // 二四象限斜
+        vector<int> sub(2*n-1,0); //一三象限斜
+        vector<int> col(n,0); //记录列
+        vector<int> path; //idx0~3依次表示每一行中皇后的位置
+        backtrace(n, 0, path, main, sub, col);
+        return res;
+    }
+    vector<string> help(vector<int> path) {
+        vector<string> ret;
+
+        for(int i = 0; i < path.size(); i++) {
+            string tmp_str(path.size(),'.');  // 类似于 vector<int> a(5,0);
+            tmp_str[path[i]]='Q';
+            ret.push_back(tmp_str);
+        }
+        return ret;
+    }
+    void backtrace(int n, int depth, vector<int>& path, vector<int>& main, vector<int>& sub, vector<int>& col) {
+        if(depth == n) {
+            res.push_back(help(path));
+        }
+        //尝试每一列都放, idx = depth, j
+        for(int j = 0; j < n; j++) {
+            if(col[j] != 1 && main[depth-j+n-1]!=1 && sub[depth+j] != 1) {
+                path.push_back(j);
+                col[j] = 1;
+                main[depth-j+n-1] = 1;
+                sub[depth+j] = 1;
+
+                backtrace(n, depth+1, path, main, sub, col);
+
+                path.pop_back();
+                col[j] = 0;
+                main[depth-j+n-1] = 0;
+                sub[depth+j] = 0;
+            }
+        }
+    }
+};
+
+24 象限 row+ col 
+13 象限 row- col + n 
+col 
+for row
+class Solution {
+public:
+    vector<vector<string>> res;
+    vector<string> path;
+    void dfs(int n, int row, vector<int>& flag_24, vector<int>& flag_13, vector<int>& flag_col) {
+        if(row == n) {
+            res.push_back(path);
+            return;
+        }
+        for(int col = 0; col < n; col++) {
+            if(flag_13[row+col] != 1 && flag_24[row-col+n]!=1 && flag_col[col]!=1) {
+                string tmp(n,'.');
+                tmp[col] = 'Q';
+
+                path.push_back(tmp);
+                flag_13[row+col] = 1;
+                flag_24[row-col+n] = 1;
+                flag_col[col] = 1;
+                dfs(n, row+1, flag_24, flag_13, flag_col);
+                path.pop_back();
+                flag_13[row+col] = 0;
+                flag_24[row-col+n] = 0;
+                flag_col[col] = 0;
+            }
+        }
+    }
+    vector<vector<string>> solveNQueens(int n) {
+        // 记录24象限斜线、13象限斜线、竖线是否有冲突；
+        vector<int> flag_24(2*n, 0);
+        vector<int> flag_13(2*n, 0);
+        vector<int> flag_col(n, 0);
+        dfs(n, 0, flag_24, flag_13, flag_col);
+        return res;
+    }
+};
+
+//
+
+//
+
+//
+
+//
